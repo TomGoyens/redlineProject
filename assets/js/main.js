@@ -2,7 +2,7 @@ $( document ).ready(function() {
     var $ball = $('.ball');
     var $area = $(".playArea");
     var g = 1;
-    var dt = 0.1;
+    var dt = 1;
 
     var vy = 0;
     var vx = 0;
@@ -15,43 +15,70 @@ $( document ).ready(function() {
     var areaWidth = $area.width();
 
     function pause(){
-      if (!go){
-        go = setInterval(play, 5);
-      } else{
-        clearInterval(go);
-        go = null;
-      }
+      console.log(requestId);
+      if (requestId == undefined) {
+        requestId = window.requestAnimationFrame(playCanvas);
+     } else {
+       window.cancelAnimationFrame(requestId);
+       requestId = undefined;
+     }
     }
 
     $('#pause').click(pause);
 
-    function play(){
-      var y = $ball.position().top;
-      var x = $ball.position().left;
+//    var go = setInterval(play, 5);
+//canvaaaaaaaaaaas--------------------------------------------------------------
+//initialise canvas
+  var c = document.getElementById("canvas");
+  var cball = c.getContext("2d");
+  var cballHeight = 20;
+  var cx = 250;
+  var cy = 0;
+  var cvx = 0;
+  var cvy = 0;
+  var cax = 0;
+  var cay = 0;
+  var cfx = 0;
+  var cfy = g;
 
+  cball.beginPath();
+  cball.arc(cx, cy, cballHeight, 0, 2 * Math.PI);
+  cball.fillStyle = "red";
+  cball.fill();
+  cball.stroke();
+
+    function playCanvas(){
       var m = 1;
+      //calculate new position
+      cay = calculateAy(cay, cfy, m);
 
+      cvy = calculateVy(cvy, cay, dt);
+      cy = calculateY(cy, cvy, cay, dt);
+      cax = calculateAy(cax, cfx, m);
+      cvx = calculateVy(cvx, cax, dt);
+      cx = calculateY(cx, cvx, cax, dt);
 
-
-      console.log(ay, vy, y);
-      ay = calculateAy(ay, fy, m);
-
-      vy = calculateVy(vy, ay, dt);
-      y = calculateY(y, vy, ay, dt);
-      ax = calculateAy(ax, fx, m);
-      vx = calculateVy(vx, ax, dt);
-      x = calculateY(x, vx, ax, dt);
-
-      if (y > areaHeight-$ball.height()){
-        y -= 2*(y+$ball.height()-areaHeight);
-        vy = -vy;
-        ay = -ay;
+      if (cy > 500-cballHeight){
+        cy -= 2*(cy+cballHeight-500);
+        cvy = -cvy;
+        cay = -cay;
       }
 
-      $ball.css('top', y);
-      $ball.css('left', x);
+      //draw new position
+      cball.clearRect(0, 0, 500, 500);
+      cball.beginPath();
+      cball.arc(cx, cy, cballHeight, 0, 2 * Math.PI);
+      cball.fillStyle = "red";
+      cball.fill();
+      cball.stroke();
 
+      requestId = requestAnimationFrame(playCanvas);
     }
+
+var requestId = requestAnimationFrame(playCanvas);
+
+//var go2 = setInterval(playCanvas, 5);
+
     function calculateY(y, vy, ay, dt){
       return y + dt*vy + dt*dt*ay/2;
     }
@@ -71,6 +98,33 @@ $( document ).ready(function() {
       return fx/m;
     }
 
+/*
+    function play(){
+      var y = $ball.position().top;
+      var x = $ball.position().left;
+
+      var m = 1;
+
+      ay = calculateAy(ay, fy, m);
+
+      vy = calculateVy(vy, ay, dt);
+      y = calculateY(y, vy, ay, dt);
+      ax = calculateAy(ax, fx, m);
+      vx = calculateVy(vx, ax, dt);
+      x = calculateY(x, vx, ax, dt);
+
+      if (y > areaHeight-$ball.height()){
+        y -= 2*(y+$ball.height()-areaHeight);
+        vy = -vy;
+        ay = -ay;
+      }
+
+      $ball.css('top', y);
+      $ball.css('left', x);
+
+    }
+
+
     function forceMeter(ev){
       console.log('hey')
       x = ev.clientX;
@@ -78,7 +132,5 @@ $( document ).ready(function() {
       console.log(x,y);
     }
 
-    document.querySelector('.ball').addEventListener('drag', forceMeter);
-
-    var go = setInterval(play, 5);
+    document.querySelector('.ball').addEventListener('drag', forceMeter);*/
 });

@@ -24,4 +24,10 @@
   z-index: 5;
 }
 
+#canvas {
+  border: solid;
+  margin-left: 50%;
+  transform: translate(-50%, 0);
+}
+
 /*# sourceMappingURL=main.css.map */
