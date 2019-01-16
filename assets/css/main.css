@@ -25,7 +25,7 @@
 }
 
 #canvas {
-  border: solid;
+  border: solid 1px;
   margin-left: 50%;
   transform: translate(-50%, 0);
 }
