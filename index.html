@@ -6,18 +6,17 @@
     <title>The Redline</title>
   </head>
   <body>
-    <div class="playArea">
-      <div class="ball">
-
-      </div>
-    </div>
 
     <canvas id="canvas" width="500" height="500" draggable="true" ondragover="allowDrop(event)"></canvas>
-    <input type="number" name="gravity" value="1">
-    <input type="number" name="wind" value="1">
-    <button type="button" name="button" id="change">Aapply changes</button>
+    <input type="number" name="gravity" value="1">gravity <br>
+    <input type="number" name="wind" value="1">wind <br>
+    <input type="number" name="velocityx" value="0"> horizontal (initial) velocity <br>
+    <input type="number" name="velocityy" value="0"> vertical (initial) velocity <br>
+    <button type="button" name="button" id="change">Apply force</button>
+    <button type="button" name="button" id="setVelocity">Apply velocities</button>
 
-    <button type="button" name="button" id="pause">PAUSE</button>
+    <button type="button" name="button" id="pause">Play/Pause</button>
+    <button type="button" name="button" id="reset">Reset</button>
 
     <script
     			  src="https://code.jquery.com/jquery-3.3.1.js"
