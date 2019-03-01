@@ -1,5 +1,8 @@
 # redlineProject
 
+[Click me!](https://tomgoyens.github.io/redlineProject/)
+
+(To be revised:)
 * In short: Beautiful (hopefully) site featuring self-made "games", using "physics" & featuring "simulations", probably.
 
 * General layout (current): See notes. (on paper)
