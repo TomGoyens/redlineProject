@@ -5,4 +5,4 @@ class PlayArea {
     this.width = width;
     this.height = height;
   }
-}
+};
