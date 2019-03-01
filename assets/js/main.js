@@ -190,6 +190,7 @@ $(document).ready(function() {
       this.image.lineTo(this.x2, this.y1);
       this.image.lineTo(this.x1, this.y1);
       this.image.fillStyle = "brown";
+      this.image.strokeStyle = "black";
       this.image.stroke();
       this.image.restore();
     }
@@ -583,5 +584,5 @@ $(document).ready(function() {
   $('#reset').click(reset);
   window.addEventListener("keydown", keyevent);
 
-
+go = setInterval(playCanvas, frameDrawSpeed);
 });
