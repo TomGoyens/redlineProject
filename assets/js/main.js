@@ -5,6 +5,7 @@ $(document).ready(function() {
   var frameDrawSpeed = 17;
   var go = undefined;
   var objects = [];
+  var movingObjects = [];
   var clicked;
   var mousePos = [0, 0];
 
@@ -29,7 +30,7 @@ $(document).ready(function() {
     this.r = radius;
     this.m = mass;
     this.bounceLoss = bounceLoss;
-    this.drag = 0.98;
+    this.drag = 0.99;
     this.Ekx = 0;
     this.Ux = 0;
     this.Ex = 0;
@@ -57,6 +58,10 @@ $(document).ready(function() {
     this.calculateV = function(dt) {
       this.vx = (this.vx + dt * this.ax)*this.drag;
       this.vy = (this.vy + dt * this.ay)*this.drag;
+      if (Math.abs(this.vx)+Math.abs(this.vy)<1){
+        this.vx = this.vx*this.drag;
+        this.vy = this.vy*this.drag;
+      }
     }
 
     this.calcU = function(g, w, PlayArea) {
@@ -126,21 +131,34 @@ $(document).ready(function() {
 
     this.collisionDetect = function(){
       for (let i = 0; i < objects.length; i++){
-        //temporary shift in coordinates to adjust to wall angle (relative coordinates where wall is stood straight)
-        let tempXBall = this.x*Math.cos(objects[i].angle) + this.y * Math.sin(objects[i].angle);
-        let tempYBall = -this.x*Math.sin(objects[i].angle) + this.y * Math.cos(objects[i].angle);
-        let tempXWall = objects[i].getCenter()[0]*Math.cos(objects[i].angle) + objects[i].getCenter()[1] * Math.sin(objects[i].angle);
-        let tempYWall = -objects[i].getCenter()[0]*Math.sin(objects[i].angle) + objects[i].getCenter()[1] * Math.cos(objects[i].angle);
 
+        /*
+        temporary shift in coordinates to adjust to wall angle (relative coordinates where wall is stood straight) using the formula:
+          x' = x·cos(O) + y·sin(O)
+          y' = -x·sin(O) + y·cos(O)
+        */
+        let tempXBall = this.x*Math.cos(objects[i].angle) + this.y * Math.sin(objects[i].angle);
+        let tempXWall = objects[i].getCenter()[0]*Math.cos(objects[i].angle) + objects[i].getCenter()[1] * Math.sin(objects[i].angle);
         let distanceX = Math.abs(tempXWall-tempXBall);
+
+        let tempYBall = -this.x*Math.sin(objects[i].angle) + this.y * Math.cos(objects[i].angle);
+        let tempYWall = -objects[i].getCenter()[0]*Math.sin(objects[i].angle) + objects[i].getCenter()[1] * Math.cos(objects[i].angle);
         let distanceY = Math.abs(tempYWall-tempYBall);
 
+        //if the distance between the ball and an object is smaller than the width/height on both axis' the ball has collided
         if (distanceX < objects[i].getWidth()/2+this.r && distanceY < (objects[i].getHeight())/2+this.r){
+
+          //calculated the velocities in the new coordinates
           let tempVxBall = this.vx*Math.cos(objects[i].angle) + this.vy * Math.sin(objects[i].angle);
           let tempVyBall = -this.vx*Math.sin(objects[i].angle) + this.vy * Math.cos(objects[i].angle);
+
+          //check the direction of the bounce: (X-, or Y-axis)
           if(distanceX > objects[i].getWidth()/2){
-            tempVxBall *= -this.bounceLoss;
-            tempVyBall *= this.bounceLoss;
+            // tempVxBall *= -this.bounceLoss;
+            tempVxBall = -tempVxBall * this.bounceLoss + objects[i].vx ;
+            // tempVyBall *= this.bounceLoss;
+            tempVyBall = -tempVyBall * this.bounceLoss + objects[i].vy ;
+            //check the direction of the bounce: (left or right)
             if (tempXWall-tempXBall > 0){
               tempXBall -= this.r + objects[i].getWidth()/2 -distanceX;
             } else {
@@ -149,15 +167,22 @@ $(document).ready(function() {
           } else {
             tempVxBall *= this.bounceLoss;
             tempVyBall *= -this.bounceLoss;
+            //check the direction of the bounce: (up or down)
             if (tempYWall-tempYBall > 0){
               tempYBall -= this.r + objects[i].getHeight()/2 -distanceY;
             } else {
               tempYBall += this.r + objects[i].getHeight()/2 -distanceY;
             }
           }
+
+          /*
+          Calculate the ew coordinates in original coordinate system using the formula:
+            x = x'·cos(O) - y'·sin(O)
+            y = x'·sin(0) + y'·cos(O)
+          */
           this.x = tempXBall*Math.cos(objects[i].angle)-tempYBall*Math.sin(objects[i].angle);
-          this.y = tempXBall*Math.sin(objects[i].angle)+tempYBall*Math.cos(objects[i].angle);
           this.vx = tempVxBall*Math.cos(objects[i].angle)-tempVyBall*Math.sin(objects[i].angle);
+          this.y = tempXBall*Math.sin(objects[i].angle)+tempYBall*Math.cos(objects[i].angle);
           this.vy = tempVxBall*Math.sin(objects[i].angle)+tempVyBall*Math.cos(objects[i].angle);
           break;
         }
@@ -173,11 +198,37 @@ $(document).ready(function() {
     this.y2 = y2;
     this.angle = rad;
     this.image;
+    this.vx = 0;
+    this.vy = 0;
+    this.maxDx1;
+    this.maxDy1;
+    this.maxDx2;
+    this.maxDy2;
+
+    this.move = function(){
+      this.x1 = this.x1 + this.vx*dt;
+      this.y1 = this.y1 + this.vy*dt;
+      this.x2 = this.x2 + this.vx*dt;
+      this.y2 = this.y2 + this.vy*dt;
+      if  (this.x1 > this.maxDx2 || this.x1 < this.maxDx1){
+        this.vx *= -1;
+      }
+      if  (this.y1 > this.maxDy2 || this.y1 < this.maxDy1){
+        this.vy *= -1;
+      }
+    }
+    this.moveInit = function(x1, x2, y1, y2, vx, vy){
+      this.maxDx1 = x1;
+      this.maxDy1 = y1;
+      this.maxDx2 = x2;
+      this.maxDy2 = y2;
+      this.vx = vx;
+      this.vy = vy;
+    }
 
     this.drawInit = function(){
       this.image = c.getContext("2d");
     }
-
     this.draw = function(){
       this.image.save();
       this.image.translate((this.x1+this.x2)/2, (this.y1+this.y2)/2);
@@ -194,7 +245,6 @@ $(document).ready(function() {
       this.image.stroke();
       this.image.restore();
     }
-
     this.getCenter = function(){
       return [(this.x1+this.x2)/2, (this.y1+this.y2)/2];
     }
@@ -287,16 +337,44 @@ $(document).ready(function() {
       this.image.fillStyle = "black";
       this.image.fill();
       this.image.stroke();
-      }
-    };
-  var ball1 = new Ball(150, 500, 0, 0, w, g, 10, 1, 0.9);
+    },
+    setPosition :function(x, y){
+      this.x = x;
+      this.y = y;
+    }
+  };
+
+  //level 1
+  //
+  // var ball1 = new Ball(150, 500, 0, 0, w, g, 10, 1, 0.9);
+  // var wall1 = new Wall(0, 100, 0, 700, 0 * Math.PI / 180);
+  // var wall2 = new Wall(0, 700, 0, 100, 0 * Math.PI / 180);
+  // var wall3 = new Wall(600, 700, 0, 700, 0 * Math.PI / 180);
+  // var wall4 = new Wall(0, 700, 600, 700, 0 * Math.PI / 180);
+  // var wall5 = new Wall(0, 200, 0, 200, 135 * Math.PI / 180);
+  // var wall6 = new Wall(500, 700, 0, 200, 45 * Math.PI / 180);
+  // var wall7 = new Wall(300, 400, 300, 700, 0 * Math.PI / 180);
+  // objects.push(wall1);
+  // objects.push(wall2);
+  // objects.push(wall3);
+  // objects.push(wall4);
+  // objects.push(wall5);
+  // objects.push(wall6);
+  // objects.push(wall7);
+  // goal.setPosition(550, 500);
+
+
+  //level 2
+  /*
+  var ball1 = new Ball(250, 550, 0, 0, w, g, 10, 1, 0.9);
+  goal.setPosition(250, 150);
   var wall1 = new Wall(0, 100, 0, 700, 0 * Math.PI / 180);
   var wall2 = new Wall(0, 700, 0, 100, 0 * Math.PI / 180);
   var wall3 = new Wall(600, 700, 0, 700, 0 * Math.PI / 180);
   var wall4 = new Wall(0, 700, 600, 700, 0 * Math.PI / 180);
-  var wall5 = new Wall(0, 200, 0, 200, 135 * Math.PI / 180);
-  var wall6 = new Wall(500, 700, 0, 200, 45 * Math.PI / 180);
-  var wall7 = new Wall(300, 400, 300, 700, 0 * Math.PI / 180);
+  var wall5 = new Wall(-100, 300, 150, 550, 45 * Math.PI / 180);
+  var wall6 = new Wall(350, 850, 100, 300, 45 * Math.PI / 180);
+  var wall7 = new Wall(350, 850, 400, 600, -45 * Math.PI / 180);
   objects.push(wall1);
   objects.push(wall2);
   objects.push(wall3);
@@ -304,6 +382,43 @@ $(document).ready(function() {
   objects.push(wall5);
   objects.push(wall6);
   objects.push(wall7);
+  */
+  //level 3
+  // var ball1 = new Ball(250, 550, 0, 0, w, g, 10, 1, 0.95);
+  // goal.setPosition(250, 150);
+  // var wall1 = new Wall(0, 100, 0, 700, 0 * Math.PI / 180);
+  // var wall2 = new Wall(0, 700, 0, 100, 0 * Math.PI / 180);
+  // var wall3 = new Wall(600, 700, 0, 700, 0 * Math.PI / 180);
+  // var wall4 = new Wall(0, 700, 600, 700, 0 * Math.PI / 180);
+  // var wall5 = new Wall(000, 500, 347, 353, 0 * Math.PI / 180);
+  // var wall6 = new Wall(540, 700, 340, 360, 0 * Math.PI / 180);
+  // objects.push(wall1);
+  // objects.push(wall2);
+  // objects.push(wall3);
+  // objects.push(wall4);
+  // objects.push(wall5);
+  // objects.push(wall6);
+
+  //level 4
+  var ball1 = new Ball(250, 550, 0, 0, w, g, 10, 1, 0.95);
+  goal.setPosition(250, 150);
+  var wall1 = new Wall(0, 100, 0, 700, 0 * Math.PI / 180);
+  var wall2 = new Wall(0, 700, 0, 100, 0 * Math.PI / 180);
+  var wall3 = new Wall(600, 700, 0, 700, 0 * Math.PI / 180);
+  var wall4 = new Wall(0, 700, 600, 700, 0 * Math.PI / 180);
+  var wall5 = new Wall(-100, 300, 345, 355, 0 * Math.PI / 180);
+  var wall6 = new Wall(350, 850, 345, 355, 0 * Math.PI / 180);
+  objects.push(wall1);
+  objects.push(wall2);
+  objects.push(wall3);
+  objects.push(wall4);
+  objects.push(wall5);
+  objects.push(wall6);
+
+  wall5.moveInit(-300, -100, 345, 355, 2, 0);
+  wall6.moveInit(150, 350, 345, 355, 2, 0);
+  movingObjects.push(wall5);
+  movingObjects.push(wall6);
 
   ball1.drawInit();
   ball1.draw();
@@ -320,8 +435,10 @@ $(document).ready(function() {
     context.clearRect(0, 0, c.width, c.height);
     ball1.draw();
     goal.draw();
+    for (let i = 0; i < movingObjects.length; i++){
+      movingObjects[i].move();
+    }
     for (let i = 0; i < objects.length; i++){
-      objects[i].drawInit();
       objects[i].draw();
     }
     //COOL AROW & TRACER
@@ -511,12 +628,12 @@ $(document).ready(function() {
     const distance = Math.sqrt(Math.pow(distanceX,2)+Math.pow(distanceY,2));
     console.log(distanceY);
     if (distance < 100){
-      ball1.vx = distanceX/4;
-      ball1.vy = distanceY/4;
+      ball1.vx = distanceX/8;
+      ball1.vy = distanceY/8;
     } else {
       const rad = Math.atan2(distanceY, distanceX);
-      ball1.vx = 25 * Math.cos(rad);
-      ball1.vy = 25 * Math.sin(rad);
+      ball1.vx = 12.5 * Math.cos(rad);
+      ball1.vy = 12.5 * Math.sin(rad);
     }
 
     clicked = false;
